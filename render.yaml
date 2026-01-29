@@ -4,8 +4,8 @@ services:
     runtime: python
     repo: https://github.com/djpechi/agentesboom2026 # Se ajustará automáticamente al repo conectado
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && alembic upgrade head
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
