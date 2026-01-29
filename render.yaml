@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: booms-platform-backend
+    runtime: python
+    repo: https://github.com/djpechi/agentesboom2026 # Se ajustará automáticamente al repo conectado
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booms-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PERPLEXITY_API_KEY
+        sync: false
+
+databases:
+  - name: booms-db
+    databaseName: booms_production
+    user: booms_user
