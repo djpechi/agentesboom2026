@@ -1,8 +1,10 @@
 # /backend/app/main.py
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
+from app.database import get_db
 
 settings = get_settings()
 
@@ -56,11 +58,19 @@ async def root():
 
 
 @app.get("/health")
-async def health():
+async def health(db: AsyncSession = Depends(get_db)):
     """Health check endpoint"""
+    db_status = "unknown"
+    try:
+        from sqlalchemy import text
+        await db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+        
     return {
         "status": "healthy",
-        "database": "connected",  # TODO: verify actual DB connection
+        "database": db_status,
         "openai": "configured" if settings.openai_api_key != "your-openai-api-key-here" else "not configured"
     }
 
