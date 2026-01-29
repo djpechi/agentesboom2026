@@ -145,45 +145,45 @@ class DemoService:
             iteration += 1
             await asyncio.sleep(delay)
 
-                if all(msg == agent_msg for msg in last_agent_messages[-3:]):
-                    print("Context Loop Detected. Forcing Completion.")
-                    
-                    # Force the agent to wrap up
-                    force_msg = "SISTEMA: Detectamos un bucle. El usuario está satisfecho. FINALIZA LA ETAPA AHORA. Genera el JSON con `isComplete: true` y todos los entregables (narrative, markdown_table, etc)."
-                    
-                    agent_response = None
-                    # Call agent one last time with this force message
-                    if stage_number == 1:
-                        agent_response = await booms_agent.process_message(force_msg, current_state, acc_context, stage.state.get("research_data"))
-                    elif stage_number == 2:
-                        agent_response = await journey_agent.process_message(force_msg, current_state, previous_outputs.get("stage_1"))
-                    # ... (logic for other stages could be added here if needed, but for now let's focus on 2)
-                    
-                    # Yield the result and exit
-                    if agent_response and agent_response.get("completed"):
-                         # Update DB
-                        stage.status = "completed"
-                        stage.output = agent_response["output"]
-                        stage.completed_at = datetime.utcnow()
-                        if stage_number < 7:
-                            next_result = await db.execute(select(Stage).where(Stage.account_id == account_id, Stage.stage_number == stage_number + 1))
-                            next_stage = next_result.scalar_one_or_none()
-                            if next_stage: next_stage.status = "in_progress"
-                        await db.commit()
+            if all(msg == agent_msg for msg in last_agent_messages[-3:]):
+                print("Context Loop Detected. Forcing Completion.")
+                
+                # Force the agent to wrap up
+                force_msg = "SISTEMA: Detectamos un bucle. El usuario está satisfecho. FINALIZA LA ETAPA AHORA. Genera el JSON con `isComplete: true` y todos los entregables (narrative, markdown_table, etc)."
+                
+                agent_response = None
+                # Call agent one last time with this force message
+                if stage_number == 1:
+                    agent_response = await booms_agent.process_message(force_msg, current_state, acc_context, stage.state.get("research_data"))
+                elif stage_number == 2:
+                    agent_response = await journey_agent.process_message(force_msg, current_state, previous_outputs.get("stage_1"))
+                # ... (logic for other stages could be added here if needed, but for now let's focus on 2)
+                
+                # Yield the result and exit
+                if agent_response and agent_response.get("completed"):
+                     # Update DB
+                    stage.status = "completed"
+                    stage.output = agent_response["output"]
+                    stage.completed_at = datetime.utcnow()
+                    if stage_number < 7:
+                        next_result = await db.execute(select(Stage).where(Stage.account_id == account_id, Stage.stage_number == stage_number + 1))
+                        next_stage = next_result.scalar_one_or_none()
+                        if next_stage: next_stage.status = "in_progress"
+                    await db.commit()
 
-                        yield json.dumps({
-                            "type": "agent_message",
-                            "content": agent_response["response"],
-                            "isComplete": True,
-                            "output": agent_response["output"]
-                        }) + "\n\n"
-                        
-                        yield json.dumps({
-                            "type": "complete",
-                            "final_output": agent_response["output"]
-                        }) + "\n\n"
+                    yield json.dumps({
+                        "type": "agent_message",
+                        "content": agent_response["response"],
+                        "isComplete": True,
+                        "output": agent_response["output"]
+                    }) + "\n\n"
                     
-                    break
+                    yield json.dumps({
+                        "type": "complete",
+                        "final_output": agent_response["output"]
+                    }) + "\n\n"
+                
+                break
             
             last_agent_messages.append(agent_msg)
             if len(last_agent_messages) > 5:
