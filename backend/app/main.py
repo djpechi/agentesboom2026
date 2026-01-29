@@ -30,10 +30,16 @@ try:
 except Exception:
     pass
 
+# Deduplicate origins
+origins = list(set(origins))
+
+# If "*" is in origins, allow_credentials must be False
+allow_all_origins = "*" in origins
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=not allow_all_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
