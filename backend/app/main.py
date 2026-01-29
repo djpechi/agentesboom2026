@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.database import get_db
@@ -63,8 +64,12 @@ async def health(db: AsyncSession = Depends(get_db)):
     db_status = "unknown"
     try:
         from sqlalchemy import text
+        from app.models.user import User
+        # Check basic connection
         await db.execute(text("SELECT 1"))
-        db_status = "connected"
+        # Check if table exists
+        await db.execute(select(User).limit(1))
+        db_status = "connected_and_migrated"
     except Exception as e:
         db_status = f"error: {str(e)}"
         
